@@ -1,1 +1,2 @@
 # CS2263_CProject
+started the main routines (definition of the main activities without necessarily defining any of the supporting structures of Student). The program currently does nothing but allow you to cycle through some options and return to main while loop.
