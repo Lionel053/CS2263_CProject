@@ -3,8 +3,6 @@
 #include <string.h>
 #include "student.h"
 
-static int nextID = 1;
-
 void load_file(char *filename, Student **students, int *studentCount) {
 
 }
@@ -13,7 +11,7 @@ void save_file(char *filename, Student **students, int *studentCount) {
   
 }
 
-Student *create_student() {
+Student *create_student(int id, char *name, float *grades) {
     Student *s = (Student *)malloc(sizeof(Student));
     if (!s) {
        printf("Memory allocation failed for Student.\n");
@@ -21,12 +19,7 @@ Student *create_student() {
     }
     
     // Assign student ID
-    s->id = nextID++;
-    
-    // Scan, allocate, and copy the Student's name
-    char name[100];
-    printf("\nName: ");
-    scanf("%s", name);
+    s->id = id;
     
     s->name = (char *)malloc(100 * sizeof(char));
     if (!s->name) {
@@ -35,14 +28,13 @@ Student *create_student() {
     }
     strcpy(s->name, name);
     
-    // Allocate and copy grades
+    // Allocate and copy grades. Needs CSV import implementation. TODO.
     s->grades = malloc(MAX_GRADES * sizeof(float));
     if (!s->grades) {
         printf("Memory allocation failed for Student grades.\n");
         return NULL;
     }
-    
-    s->gpa = 0.0;
+    memcpy(s->grades, grades, MAX_GRADES * sizeof(float));
 
     printf("Student %s created.\n\n", s->name);
     return s;
@@ -86,6 +78,9 @@ void view_list(Student **students, int studentCount) {
         Student *s = students[i];
         printf("ID: %d\n", s->id);
         printf("Name: %s\n", s->name);
-        printf("GPA: %.2f\n\n", s->gpa);
+        for (int j = 0; j < MAX_GRADES; j++) {
+            printf("%.2f ", s->grades[j]);
+        }
+        printf("\nGPA: %.2f\n\n", s->gpa);
     }
 }

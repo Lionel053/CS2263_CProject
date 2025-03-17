@@ -9,7 +9,6 @@ int main() {
         printf("Failed to allocate memory for students list.\n");
         return EXIT_FAILURE;
     }
-    
     int choice;
 
     while (1) {
@@ -30,9 +29,21 @@ int main() {
         }
 
         switch(choice) {
-            case 1:
-                add_student(students, &studentCount, create_student());
+            case 1: {
+                char name[MAX_NAME];
+                float grades[MAX_GRADES];
+                
+                printf("\nName: ");
+                scanf("%s", name);
+                
+                printf("Please enter %d grade points separated by spaces: ", MAX_GRADES);
+                for (int i = 0; i < MAX_GRADES; i++) {
+                    scanf("%f", &grades[i]);
+                }
+
+                add_student(students, &studentCount, create_student(studentCount + 1, name, grades));
                 break;
+            }
             case 2:
                 view_student(students);
                 break;

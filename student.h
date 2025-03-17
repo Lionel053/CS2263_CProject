@@ -2,7 +2,7 @@
 #define STUDENT_H
 
 #define MAX_NAME 100
-#define MAX_GRADES 50
+#define MAX_GRADES 5
 #define MAX_STUDENTS 100
 
 typedef struct {
@@ -16,7 +16,7 @@ typedef struct {
 void load_file(char *filename, Student **students, int *studentCount);
 void save_file(char *filename, Student **students, int *studentCount);
 void add_student(Student **students, int *studentCount, Student *s);
-Student *create_student();
+Student *create_student(int id, char *name, float *grades);
 void delete_student(Student **students);
 void edit_student(Student **students);
 void view_student(Student **students);
