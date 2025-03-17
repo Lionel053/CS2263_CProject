@@ -16,7 +16,7 @@ int main() {
 
         printf("Welcome to the Grade Management System!\n");
         printf("Please choose from one of the following options:\n");
-        printf("1: Add a new student\n");
+        printf("1: Create a new student\n");
         printf("2: View info for an existing Student\n");
         printf("3: Modify student data\n");
         printf("4: Delete existing student\n");
@@ -31,7 +31,7 @@ int main() {
 
         switch(choice) {
             case 1:
-                add_student(students, &studentCount);
+                add_student(students, &studentCount, create_student());
                 break;
             case 2:
                 view_student(students);

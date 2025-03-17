@@ -13,11 +13,11 @@ void save_file(char *filename, Student **students, int *studentCount) {
   
 }
 
-void add_student(Student **students, int *studentCount) {
+Student *create_student() {
     Student *s = (Student *)malloc(sizeof(Student));
     if (!s) {
        printf("Memory allocation failed for Student.\n");
-       return;
+       return NULL;
     }
     
     // Assign student ID
@@ -31,7 +31,7 @@ void add_student(Student **students, int *studentCount) {
     s->name = (char *)malloc(100 * sizeof(char));
     if (!s->name) {
         printf("Memory allocation failed for Student name.\n");
-        return;
+        return NULL;
     }
     strcpy(s->name, name);
     
@@ -39,15 +39,30 @@ void add_student(Student **students, int *studentCount) {
     s->grades = malloc(MAX_GRADES * sizeof(float));
     if (!s->grades) {
         printf("Memory allocation failed for Student grades.\n");
-        return;
+        return NULL;
     }
     
     s->gpa = 0.0;
-    
-    // Add Student to array and increment count
-    students[*studentCount] = s;
-    (*studentCount)++;
-    printf("Student %s successfully added.\n\n", name);
+
+    printf("Student %s created.\n\n", s->name);
+    return s;
+}
+
+void add_student(Student **students, int *studentCount, Student *s){
+  if (*studentCount >= MAX_STUDENTS) {
+    printf("Too many students!\n");
+    return;
+  }
+  
+  if (!s) {
+    printf("No student found.\n");
+    return;
+  }
+  
+  students[*studentCount] = s;
+  (*studentCount)++;
+  
+  printf("Student %s added to list.\n", s->name);
 }
 
 void view_student(Student **students) {

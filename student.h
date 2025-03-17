@@ -15,7 +15,8 @@ typedef struct {
 // main functions
 void load_file(char *filename, Student **students, int *studentCount);
 void save_file(char *filename, Student **students, int *studentCount);
-void add_student(Student **students, int *studentCount);
+void add_student(Student **students, int *studentCount, Student *s);
+Student *create_student();
 void delete_student(Student **students);
 void edit_student(Student **students);
 void view_student(Student **students);
