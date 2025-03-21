@@ -159,5 +159,55 @@ void print_stud(Student* stud) {
 
 }
 
+//////////////////////// CSV File Operations /////////////////////////////
+Student** read_students_from_csv(const char* filename, int* student_count) {
+    FILE* file = fopen(filename, "r");
+    if (!file) {
+        printf("Failed to open file: %s\n", filename);
+        return NULL;
+    }
+
+    Student** students = (Student**) malloc(sizeof(Student*) * 100);
+    *student_count = 0;
+    char line[256];
+
+    while (fgets(line, sizeof(line), file)) {
+        char* token = strtok(line, ",");
+        char* name = strdup(token);
+        token = strtok(NULL, ",");
+        int id = atoi(token);
+
+        Course** courses = (Course**) malloc(sizeof(Course*) * 4);
+        for (int i = 0; i < 4; i++) {
+            token = strtok(NULL, ",");
+            char* course_title = strdup(token);
+            token = strtok(NULL, ",");
+            int grade = atoi(token);
+            courses[i] = construct_course(course_title, grade);
+        }
+
+        float* grade_points = getGradePoints(courses, 4);
+        float gpa = calculateGPA(grade_points, 4);
+        free(grade_points);
+
+        students[*student_count] = construct_stud(name, courses, id, gpa, 4);
+        (*student_count)++;
+    }
+    fclose(file);
+    return students;
+}
+
+void write_students_to_csv(const char* filename, Student** students, int student_count) {
+    FILE* file = fopen(filename, "w");
+    if (!file) {
+        printf("Failed to open file for writing: %s\n", filename);
+        return;
+    }
+    for (int i = 0; i < student_count; i++) {
+        fprintf(file, "%s,%d,%.2f\n", students[i]->name, students[i]->id, students[i]->gpa);
+    }
+    fclose(file);
+}
+
 
 

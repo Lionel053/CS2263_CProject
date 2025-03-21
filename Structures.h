@@ -32,5 +32,9 @@ Student* construct_stud(const char* name, Course** courses, int id, float gpa, i
 void free_stud(Student* stud);
 void print_stud(Student* stud);
 
+// File operations for reading and writing students from CSV
+Student** read_students_from_csv(const char* filename, int* student_count);
+void write_students_to_csv(const char* filename, Student** students, int student_count);
+
 
 #endif
