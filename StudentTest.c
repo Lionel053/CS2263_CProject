@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
     int student_count;
 
 
-    Node* stud_list = read_students_from_csv(csv_filename, &student_count);
+    StudNode* stud_list = read_students_from_csv(csv_filename, &student_count);
 
     if (!stud_list) {
 
@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
 
     // Print student details for verification
 
-    print_list(stud_list);
+    print_stud_list(stud_list);
  
     // Write student data to output.csv
 
@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
  
     // Free allocated memory
 
-    clear_list(stud_list);
+    clear_stud_list(stud_list);
 
     return EXIT_SUCCESS;
 

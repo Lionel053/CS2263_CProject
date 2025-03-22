@@ -46,17 +46,16 @@ void print_course(Course* course) {
 
 ////////////////////////Helper to Student related procedures///////////////////
 //If you use this function, don't forget to free float* when you're done with it!
-float* getGradePoints(Course** courses, int numGrades) {
+float* getGradePoints(CourseNode* list, int numGrades) {
 
     float* gradePoints = malloc(sizeof(float) * numGrades);
-    Course* current;
+    CourseNode* current = list;
 
     for (int i = 0; i < numGrades; i++) {
-        current = *courses;
-        int grade = current -> grade;
+        int grade = current -> course -> grade;
         float gp = convertToGradePoint(grade);
         gradePoints[i] = gp;
-        *courses++;
+        current = current -> next;
     }
 
     return gradePoints;
@@ -100,7 +99,7 @@ float calculateGPA(float gpa[], int numGrades) {
 
 ////////////////////////Student related procedures//////////////////////
 //Memory for courses have already been allocated. The free_stud procedure will iterate and free the courses when called.
-Student* construct_stud(const char* name, Course** courses, int id, float gpa, int numGrades) {
+Student* construct_stud(const char* name, CourseNode* course_list, int id, float gpa, int numGrades) {
 
     Student* stud = (Student*) malloc(sizeof(Student));
 
@@ -120,7 +119,7 @@ Student* construct_stud(const char* name, Course** courses, int id, float gpa, i
     stud -> gpa = gpa;
     stud -> numGrades = numGrades;
 
-    stud -> courses = courses;
+    stud -> courses = course_list;
 
     return stud;
 
@@ -129,14 +128,14 @@ Student* construct_stud(const char* name, Course** courses, int id, float gpa, i
 void free_stud(Student* stud) {
 
     if (stud != NULL) {
-        Course** courses = stud -> courses;
-        Course* current;
-        for (int i = 0; i < stud -> numGrades; i++) {
-            current = *courses;
-            free_course(current);
-            courses++;
+        CourseNode* current = stud -> courses;
+        CourseNode* prev;
+        while (current != NULL) {
+            free_course(current -> course);
+            prev = current;
+            current = current -> next;
+            free(prev);
         }
-        free(stud -> courses);
         free(stud -> name);
         free(stud);
     }
@@ -148,13 +147,7 @@ void print_stud(Student* stud) {
     printf("Student name: %s\n", stud -> name);
     printf("Student ID: %d\n", stud -> id);
 
-    Course** courses = stud -> courses;
-    Course* current;
-    for (int i = 0; i < stud -> numGrades; i++) {
-        current = *courses;
-        print_course(current);
-        courses++;
-    }
+    print_course_list(stud -> courses);
 
     printf("GPA: %.2f\n", stud -> gpa);
     printf("\n");
@@ -162,7 +155,7 @@ void print_stud(Student* stud) {
 }
 
 //////////////////////// CSV File Operations /////////////////////////////
-Node* read_students_from_csv(const char* filename, int* student_count) {
+StudNode* read_students_from_csv(const char* filename, int* student_count) {
     FILE* file = fopen(filename, "r");
     if (!file) {
         printf("Failed to open file: %s\n", filename);
@@ -171,39 +164,42 @@ Node* read_students_from_csv(const char* filename, int* student_count) {
     
     *student_count = 0;
 
-    Node* stud_list = NULL;//Must be set to NULL. This constructs an empty list.
+    StudNode* stud_list = NULL;//Must be set to NULL. This constructs an empty list.
     
     char line[256];
 
     while (fgets(line, sizeof(line), file)) {
         char* token = strtok(line, ",");
-        char* name = strdup(token);
+        char* name = strdup(token);//strdup allocates memory, must be freed
         token = strtok(NULL, ",");
         int id = atoi(token);
 
-        Course** courses = (Course**) malloc(sizeof(Course*) * 4);
+        //Course** courses = (Course**) malloc(sizeof(Course*) * 4);
+        CourseNode* course_list = NULL;//Must be set to NULL. This constructs an empty list
+        Course* course;
         for (int i = 0; i < 4; i++) {
             token = strtok(NULL, ",");
-            char* course_title = strdup(token);
+            char* course_title = strdup(token);//allocate memory must be freed everytime
             token = strtok(NULL, ",");
             int grade = atoi(token);
-            courses[i] = construct_course(course_title, grade);
-            free(course_title);
+            course = construct_course(course_title, grade);
+            course_list = insert_course(course_list, course);
+            free(course_title);//free course_title
         }
 
-        float* grade_points = getGradePoints(courses, 4);
+        float* grade_points = getGradePoints(course_list, 4);
         float gpa = calculateGPA(grade_points, 4);
         free(grade_points);
-        Student* stud = construct_stud(name, courses, id, gpa, 4);
+        Student* stud = construct_stud(name, course_list, id, gpa, 4);
         stud_list = insert_stud(stud_list, stud);
-        free(name);
-        *student_count++;
+        free(name);//freed name
+        (*student_count)++;
     }
     fclose(file);
     return stud_list;
 }
 
-void write_students_to_csv(const char* filename, Node* list, int student_count) {
+void write_students_to_csv(const char* filename, StudNode* list, int student_count) {
     FILE* file = fopen(filename, "w");
     if (!file) {
         printf("Failed to open file for writing: %s\n", filename);
@@ -215,20 +211,60 @@ void write_students_to_csv(const char* filename, Node* list, int student_count) 
     fclose(file);
 }
 
-///////////////////////////////Linked List Operations//////////////////////////////
+///////////////////////////////Course Node Linked List Operations///////////////////////////
+static CourseNode* construct_course_node(Course* course) {
 
-static Node* construct_list(Student* stud) {
+    CourseNode* this = malloc(sizeof(CourseNode));
+    this -> course = course;
+    return this;
 
-    Node* this = malloc(sizeof(Node));
+}
+
+CourseNode* insert_course(CourseNode* list, Course* course) {
+
+    CourseNode* this = construct_course_node(course);
+    this -> next = list;
+    return this;
+
+}
+
+void print_course_list(CourseNode* list) {
+
+    CourseNode* runner = list;
+    while (runner != NULL) {
+        print_course(runner -> course);
+        runner = runner -> next;
+    }
+
+}
+
+void clear_course_list(CourseNode* list) {
+
+    CourseNode* runner = list;
+    CourseNode* prev;
+    while (runner != NULL) {
+        free_course(runner -> course);
+        prev = runner;
+        runner = runner -> next;
+        free(prev);
+    }
+
+}
+
+///////////////////////////////Student Linked List Operations//////////////////////////////
+
+static StudNode* construct_stud_node(Student* stud) {
+
+    StudNode* this = malloc(sizeof(StudNode));
     this -> stud = stud;
     return this;
     
 }
 
-void clear_list(Node* list) {
+void clear_stud_list(StudNode* list) {
 
-    Node* runner = list;
-    Node* prev;
+    StudNode* runner = list;
+    StudNode* prev;
     while (runner != NULL) {
         free_stud(runner -> stud);
         prev = runner;
@@ -239,26 +275,26 @@ void clear_list(Node* list) {
 }
 
 //For first entry, list must be set to NULL before inserting first entry - see StudentTest
-Node* insert_stud(Node* list, Student* stud) {
+StudNode* insert_stud(StudNode* list, Student* stud) {
 
-    Node* this = construct_list(stud);
+    StudNode* this = construct_stud_node(stud);
     this -> next = list;
     
     return this;
 
 }
 
-Node* remove_stud(Node* list, Student* stud) {
+StudNode* remove_stud(StudNode* list, Student* stud) {
     //TODO
+    return NULL;
 }
 
-void print_list(Node* list) {
+void print_stud_list(StudNode* list) {
 
-    Node* runner = list;
+    StudNode* runner = list;
     while (runner != NULL) {
         print_stud(runner -> stud);
         runner = runner -> next;
     }
     
 }
-
