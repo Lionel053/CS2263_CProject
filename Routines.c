@@ -90,7 +90,7 @@ float convertToGradePoint(int grade) {
 
 float calculateGPA(float gpa[], int numGrades) {
 
-    float sum;
+    float sum = 0.00;                       //Primitive types must be initialized - this is where I generated a bug by not initializing
     for (int i = 0; i < numGrades; i++) {
         sum += gpa[i];
     }
@@ -147,6 +147,7 @@ void print_stud(Student* stud) {
 
     printf("Student name: %s\n", stud -> name);
     printf("Student ID: %d\n", stud -> id);
+
     Course** courses = stud -> courses;
     Course* current;
     for (int i = 0; i < stud -> numGrades; i++) {
@@ -154,21 +155,24 @@ void print_stud(Student* stud) {
         print_course(current);
         courses++;
     }
+
     printf("GPA: %.2f\n", stud -> gpa);
     printf("\n");
 
 }
 
 //////////////////////// CSV File Operations /////////////////////////////
-Student** read_students_from_csv(const char* filename, int* student_count) {
+Node* read_students_from_csv(const char* filename, int* student_count) {
     FILE* file = fopen(filename, "r");
     if (!file) {
         printf("Failed to open file: %s\n", filename);
         return NULL;
     }
-
-    Student** students = (Student**) malloc(sizeof(Student*) * 100);
+    
     *student_count = 0;
+
+    Node* stud_list = NULL;//Must be set to NULL. This constructs an empty list.
+    
     char line[256];
 
     while (fgets(line, sizeof(line), file)) {
@@ -184,30 +188,77 @@ Student** read_students_from_csv(const char* filename, int* student_count) {
             token = strtok(NULL, ",");
             int grade = atoi(token);
             courses[i] = construct_course(course_title, grade);
+            free(course_title);
         }
 
         float* grade_points = getGradePoints(courses, 4);
         float gpa = calculateGPA(grade_points, 4);
         free(grade_points);
-
-        students[*student_count] = construct_stud(name, courses, id, gpa, 4);
-        (*student_count)++;
+        Student* stud = construct_stud(name, courses, id, gpa, 4);
+        stud_list = insert_stud(stud_list, stud);
+        free(name);
+        *student_count++;
     }
     fclose(file);
-    return students;
+    return stud_list;
 }
 
-void write_students_to_csv(const char* filename, Student** students, int student_count) {
+void write_students_to_csv(const char* filename, Node* list, int student_count) {
     FILE* file = fopen(filename, "w");
     if (!file) {
         printf("Failed to open file for writing: %s\n", filename);
         return;
     }
     for (int i = 0; i < student_count; i++) {
-        fprintf(file, "%s,%d,%.2f\n", students[i]->name, students[i]->id, students[i]->gpa);
+        fprintf(file, "%s,%d,%.2f\n", list -> stud -> name, list -> stud -> id, list -> stud -> gpa);
     }
     fclose(file);
 }
 
+///////////////////////////////Linked List Operations//////////////////////////////
 
+static Node* construct_list(Student* stud) {
+
+    Node* this = malloc(sizeof(Node));
+    this -> stud = stud;
+    return this;
+    
+}
+
+void clear_list(Node* list) {
+
+    Node* runner = list;
+    Node* prev;
+    while (runner != NULL) {
+        free_stud(runner -> stud);
+        prev = runner;
+        runner = runner -> next;
+        free(prev);
+    }
+
+}
+
+//For first entry, list must be set to NULL before inserting first entry - see StudentTest
+Node* insert_stud(Node* list, Student* stud) {
+
+    Node* this = construct_list(stud);
+    this -> next = list;
+    
+    return this;
+
+}
+
+Node* remove_stud(Node* list, Student* stud) {
+    //TODO
+}
+
+void print_list(Node* list) {
+
+    Node* runner = list;
+    while (runner != NULL) {
+        print_stud(runner -> stud);
+        runner = runner -> next;
+    }
+    
+}
 

@@ -12,7 +12,6 @@ int main(int argc, char** argv) {
     if (argc < 2) {
 
         printf("No CSV file provided. Using default: %s\n", DEFAULT_CSV_FILE);
-
         csv_filename = DEFAULT_CSV_FILE;
 
     } else {
@@ -21,11 +20,16 @@ int main(int argc, char** argv) {
 
     }
  
+    //We should be careful to initialize primitive types because it will point to a garbage value if we don't. 
+    //In this case, since the read function does initialize it to zero, it's a non issue.
+    //I only mention it because I made that mistake with the calculate gpa function and had a hell of time
+    //trying to figure it out. 
     int student_count;
 
-    Student** students = read_students_from_csv(csv_filename, &student_count);
 
-    if (!students) {
+    Node* stud_list = read_students_from_csv(csv_filename, &student_count);
+
+    if (!stud_list) {
 
         return EXIT_FAILURE;
 
@@ -35,30 +39,18 @@ int main(int argc, char** argv) {
 
     // Print student details for verification
 
-    for (int i = 0; i < student_count; i++) {
-
-        print_stud(students[i]);
-
-    }
+    print_list(stud_list);
  
     // Write student data to output.csv
 
-    write_students_to_csv("output.csv", students, student_count);
+    write_students_to_csv("output.csv", stud_list, student_count);
 
     printf("Student data written to output.csv\n");
  
     // Free allocated memory
 
-    for (int i = 0; i < student_count; i++) {
+    clear_list(stud_list);
 
-        free_stud(students[i]);
-
-    }
-
-    free(students);
- 
     return EXIT_SUCCESS;
 
 }
-
- 
