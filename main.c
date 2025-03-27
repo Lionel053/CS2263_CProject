@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
             
             case 3:
                 printf("Enter directory name to list: ");
-                 scanf(" %[^\n]", parent_name);
+                scanf(" %[^\n]", parent_name);
                 Directory* dir = searchDirectory(root, parent_name);
                 if (!dir) {
                     printf("Directory '%s' not found :(\n", parent_name);
@@ -95,9 +95,10 @@ int main(int argc, char** argv) {
             
             case 4:
                 printf("Enter name to search for: ");
-                 scanf(" %[^\n]", name);
+                scanf(" %[^\n]", name);
                 printf("Results:\n");
-                searchItem(root, name);
+                char path[1024] = "";
+                searchItem(root, name, path);
                 break;
 
             case 5:

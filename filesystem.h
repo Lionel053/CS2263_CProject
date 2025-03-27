@@ -24,7 +24,7 @@ Directory* createDirectory(Directory *parent, const char *name);
 File* createFile(const char *name, int size);
 Directory* searchDirectory(Directory *current, const char *name);
 void listDirectory(Directory *dir, int depth);
-void searchItem(Directory *dir, const char *target);
+void searchItem(Directory *dir, const char *target, char *path);
 void freeDirectory(Directory *dir);
 
 #endif  // FILESYSTEM_H

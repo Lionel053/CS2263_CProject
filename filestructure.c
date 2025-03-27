@@ -65,32 +65,25 @@ void listDirectory(Directory *dir, int depth) {
 }
 
 // Recursively search for an item (directory or file) by name and print its full path.
-void searchItem(Directory *dir, const char *target) {
+void searchItem(Directory *dir, const char *target, char *path) {
     // Check if current directory matches.
     if (strcmp(dir->name, target) == 0) {
-        // Build and print the full path.
-        if (dir->parent) {
-            searchItem(dir->parent, ""); // Print parent's path.
-            printf("/%s\n", dir->name);
-        } else {
-            printf("%s\n", dir->name);
-        }
+        // Print the full path from root to current directory.
+        printf("%s/%s\n", path, dir->name);
     }
     // Check files in current directory.
     for (File *f = dir->files; f; f = f->next) {
         if (strcmp(f->name, target) == 0) {
-            // Build and print the full path.
-            if (dir->parent) {
-                searchItem(dir->parent, ""); // Print parent's path.
-                printf("/%s/%s\n", dir->name, f->name);
-            } else {
-                printf("%s/%s\n", dir->name, f->name);
-            }
+            // Print the full path for the file
+            printf("%s/%s/%s\n", path, dir->name, f->name);
         }
     }
     // Recurse into subdirectories.
-    for (Directory *sub = dir->subdirs; sub; sub = sub->next)
-        searchItem(sub, target);
+    for (Directory *sub = dir->subdirs; sub; sub = sub->next) {
+        char newPath[1024];
+        snprintf(newPath, sizeof(newPath), "%s/%s", path, dir->name);
+        searchItem(sub, target, newPath);
+    }
 }
 
 // Recursively free memory for directories and files.
