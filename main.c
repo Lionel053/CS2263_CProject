@@ -34,9 +34,9 @@ int main(int argc, char** argv) {
         switch (choice) {
             case 1:
                 printf("Enter the name of the directory: ");
-                scanf("%s", name);
+                scanf(" %[^\n]", name);
                 printf("Enter parent directory name (or 'root'): ");
-                scanf("%s", parent_name);
+                scanf(" %[^\n]", parent_name);
                 parent = searchDirectory(root, parent_name);
                 if (!parent) {
                     printf("Parent directory '%s' not found :(\n", parent_name);
@@ -54,11 +54,11 @@ int main(int argc, char** argv) {
             
             case 2:
                 printf("Enter file name: ");
-                scanf("%s", name);
+                scanf(" %[^\n]", name);
                 printf("Enter file size (in bytes): ");
                 scanf("%d", &file_size);
                 printf("Enter parent directory name (or 'root'): ");
-                scanf("%s", parent_name);
+                scanf(" %[^\n]", parent_name);
                 parent = searchDirectory(root, parent_name);
                 if (!parent) {
                     printf("Parent directory '%s' not found :(\n", parent_name);
@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
             
             case 3:
                 printf("Enter directory name to list: ");
-                scanf("%s", parent_name);
+                 scanf(" %[^\n]", parent_name);
                 Directory* dir = searchDirectory(root, parent_name);
                 if (!dir) {
                     printf("Directory '%s' not found :(\n", parent_name);
@@ -95,7 +95,7 @@ int main(int argc, char** argv) {
             
             case 4:
                 printf("Enter name to search for: ");
-                scanf("%s", name);
+                 scanf(" %[^\n]", name);
                 printf("Results:\n");
                 searchItem(root, name);
                 break;
