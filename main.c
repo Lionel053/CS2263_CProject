@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
                 scanf("%s", name);
                 printf("Enter parent directory name (or 'root'): ");
                 scanf("%s", parent_name);
-                Directory* parent = findDirectory(root, parent_name);
+                parent = findDirectory(root, parent_name);
                 if (!parent) {
                     printf("Parent directory '%s' not found :(\n", parent_name);
                     break;
