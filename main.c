@@ -33,8 +33,6 @@ int main(int argc, char** argv) {
 
         switch (choice) {
             case 1:
-                char name[NAME_SIZE];
-                char parent_name[NAME_SIZE];
                 printf("Enter the name of the directory: ");
                 scanf("%s", name);
                 printf("Enter parent directory name (or 'root'): ");
