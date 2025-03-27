@@ -22,7 +22,7 @@ typedef struct Directory {
 // Function prototypes
 Directory* createDirectory(Directory *parent, const char *name);
 File* createFile(const char *name, int size);
-Directory* findDirectory(Directory *current, const char *name);
+Directory* searchDirectory(Directory *current, const char *name);
 void listDirectory(Directory *dir, int depth);
 void searchItem(Directory *dir, const char *target);
 void freeDirectory(Directory *dir);

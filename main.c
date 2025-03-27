@@ -37,12 +37,12 @@ int main(int argc, char** argv) {
                 scanf("%s", name);
                 printf("Enter parent directory name (or 'root'): ");
                 scanf("%s", parent_name);
-                parent = findDirectory(root, parent_name);
+                parent = searchDirectory(root, parent_name);
                 if (!parent) {
                     printf("Parent directory '%s' not found :(\n", parent_name);
                     break;
                 }
-                if (findDirectory(parent -> subdirs, name)) {
+                if (searchDirectory(parent -> subdirs, name)) {
                     printf("Directory '%s' already exists under '%s'.\n", name, parent_name);
                     break;
                 }
@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
                 scanf("%d", &file_size);
                 printf("Enter parent directory name (or 'root'): ");
                 scanf("%s", parent_name);
-                parent = findDirectory(root, parent_name);
+                parent = searchDirectory(root, parent_name);
                 if (!parent) {
                     printf("Parent directory '%s' not found :(\n", parent_name);
                     break;
@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
             case 3:
                 printf("Enter directory name to list: ");
                 scanf("%s", parent_name);
-                Directory* dir = findDirectory(root, parent_name);
+                Directory* dir = searchDirectory(root, parent_name);
                 if (!dir) {
                     printf("Directory '%s' not found :(\n", parent_name);
                 } else {

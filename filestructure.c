@@ -32,14 +32,14 @@ File* createFile(const char *name, int size) {
 }
 
 // Recursively search for a directory by name. Returns pointer if found; otherwise NULL.
-Directory* findDirectory(Directory *current, const char *name) {
+Directory* searchDirectory(Directory *current, const char *name) {
     if (!current)
         return NULL;
     if (strcmp(current->name, name) == 0)
         return current;
     // Check subdirectories recursively.
     for (Directory *sub = current->subdirs; sub; sub = sub->next) {
-        Directory *found = findDirectory(sub, name);
+        Directory *found = searchDirectory(sub, name);
         if (found)
             return found;
     }
