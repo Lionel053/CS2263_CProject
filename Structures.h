@@ -12,6 +12,7 @@ typedef struct {
 typedef struct crselistnode {
 
     struct crselistnode* next;
+    struct crselistnode* prev;
     Course* course;
 
 }CourseNode;
@@ -29,6 +30,7 @@ typedef struct {
 typedef struct studlistnode {
 
     struct studlistnode* next;
+    struct studlistnode* prev;
     Student* stud;
 
 }StudNode;
@@ -37,6 +39,7 @@ typedef struct studlistnode {
 Course* construct_course(const char* title, int grade);
 void free_course(Course* course);
 void print_course(Course* course);
+Course* copy_course(Course* course);//Returns deep copy
 
 //Helper methods to calculate GPA after reading in Array of courses
 float* getGradePoints(CourseNode* list, int numGrades);
@@ -46,29 +49,52 @@ float calculateGPA(float gpa[], int numGrades);
 //Regular procedures associated with CourseNode - ie LinkedList
 CourseNode* insert_course(CourseNode* list, Course* course);
 void print_course_list(CourseNode* list);
+CourseNode* delete_course(CourseNode* list, char* title);
 void clear_course_list(CourseNode* list);
-
+CourseNode* copy_course_list(CourseNode* list);//Returns deep copy of student course list
 
 //Regular procedures associated with Student
 Student* construct_stud(const char* name, CourseNode* course_list, int id, float gpa, int numGrades);
 void free_stud(Student* stud);
 void print_stud(Student* stud);
+void print_stud_brief(Student* stud);//prints student name and id only
+Student* copy_stud(Student* stud);//returns a deep copy of the given student
 
 // File operations for reading and writing students from CSV
-StudNode* read_students_from_csv(const char* filename, int* student_count);
-void write_students_to_csv(const char* filename, StudNode* stud_list, int student_count);
+StudNode* read_students_from_csv(const char* filename, int* student_count);//creates master list of students at beginning
+void write_students_to_csv(const char* filename, StudNode* stud_list);//writes master list of students at end of program
 
 //Operations associated with StudNode - ie LinkedList
-//static StudNode* construct_list(Student* stud);//should only be used by insert_stud. That's why it's static.
-StudNode* remove_stud(StudNode* list, Student* stud);//TODO
-StudNode* insert_stud(StudNode* list, Student* stud);//constructs a new node and inserts into list
-Student* find_stud_by_name(StudNode* list, char name);//TODO
-Student* find_stud_by_id(StudNode* list, int id);//TODO
-void sort_list_by_name(StudNode* list);//TODO
-void sort_list_by_id(StudNode* list);//TODO
-void sort_list_by_gpa(StudNode* list);//TODO
+StudNode* insert_stud(StudNode* list, Student* stud);//constructs a new node and inserts into list given an existing student
 void print_stud_list(StudNode* list);
+void print_stud_list_brief(StudNode* list);//Prints abbreviated list, names and ids only
 void clear_stud_list(StudNode* list);
+StudNode* copy_stud_list(StudNode* list);//Returns deep copy of student list
+
+//Sorting methods
+StudNode* sort_by_stud_name(StudNode* list);
+StudNode* sort_by_stud_id(StudNode* list);
+StudNode* sort_by_stud_gpa(StudNode* list);
+
+//Sublisting methods, returns subset of the master list based on criteria (deep copy, must be freed after use)
+StudNode* find_stud_by_name(StudNode* list, char* name);
+StudNode* find_stud_by_id(StudNode* list, int id);//Should only return a list containing one node since the id is unique (can be used to detect duplicates)
+
+//High level routines for use cases
+StudNode* init_stud_list(const char* file);
+StudNode* find_stud(StudNode* list);
+StudNode* add_new_stud(StudNode* list);
+char* get_string_input(char* input, int validate);
+int get_new_id(StudNode* list);
+CourseNode* get_course_input();
+StudNode* delete_stud(StudNode* list);
+StudNode* remove_stud_by_id(StudNode* list, int id);
+void press_enter_to_continue();
+int get_list_count(StudNode* list);
+int get_course_count(CourseNode* list);
+StudNode* modify_stud_record(StudNode* list);
+CourseNode* delete_course_record(CourseNode* course_list);
+CourseNode* add_course_record(CourseNode* course_list);
 
 
 #endif
