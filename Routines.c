@@ -48,10 +48,13 @@ void free_course(Course* course) {
 void print_course(Course* course) {
 
     int grade = course -> grade;
-    printf("%s\t| ", course -> title);
-    for (int i = 0; i < grade; i += 10)
-        printf("#");
-    printf("\t(%d)\n", grade);
+    char bar[11];
+    for (int i = 0; i < 10; i++)
+        if (i < grade / 10)
+            bar[i] = '#';
+        else
+            bar[i] = ' ';
+    printf("%-10s| %s (%d)\n", course->title, bar, grade);
 
 }
 
@@ -73,28 +76,26 @@ float* getGradePoints(CourseNode* list, int numGrades) {
 }
 
 float convertToGradePoint(int grade) {
-    if (grade < 50) {
-        return 0.0;
-    } else if (grade < 60) {
-        return 1.0;
-    } else if (grade < 65) {
-        return 2.0;
-    } else if (grade < 70) {
-        return 2.3;
-    } else if (grade < 75) {
-        return 2.7;
-    } else if (grade < 80) {
-        return 3.0;
-    } else if (grade < 85) {
-        return 3.5;
-    } else if (grade < 90) {
-        return 3.7;
-    } else if (grade < 95) {
-        return 4.0;
-    } else if (grade < 100) {
+    if (grade >= 90) {
         return 4.3;
+    } else if (grade >= 85) {
+        return 4.0;
+    } else if (grade >= 80) {
+        return 3.7;
+    } else if (grade >= 75) {
+        return 3.3;
+    } else if (grade >= 70) {
+        return 3.0;
+    } else if (grade >= 65) {
+        return 2.7;
+    } else if (grade >= 60) {
+        return 2.3;
+    } else if (grade >= 55) {
+        return 2.0;
+    } else if (grade >= 50) {
+        return 1.0;
     } else {
-        return 4.5;
+        return 0.0;
     }
 }
 
@@ -180,12 +181,13 @@ void free_stud(Student* stud) {
 
 void print_stud(Student* stud) {
 
-    printf("Student name: %s\n", stud -> name);
-    printf("Student ID: %d\n", stud -> id);
-
+    printf("\n\n%-20s : %-5s : %-4s\n", "Name", "ID", "GPA");
+    printf("-------------------------------------\n");
+    print_stud_brief(stud);
+    printf("\n");
+    
     print_course_list(stud -> courses);
 
-    printf("GPA: %.2f\n", stud -> gpa);
     printf("\n");
 
 }
@@ -195,8 +197,19 @@ void print_stud_brief(Student* stud) {
     if (stud == NULL) {
         return;
     }
-    printf("%s : %d : %.2f", stud -> name, stud -> id, stud -> gpa);
-
+    if (stud->gpa >= 3.7) {
+        printf("%-20s : %-5d : \x1b[32m%-4.2f\x1b[0m\n", stud -> name, stud -> id, stud -> gpa);
+    }
+    else if (stud->gpa <= 1.0) {
+        printf("%-20s : %-5d : \x1b[31m%-4.2f\x1b[0m\n", stud -> name, stud -> id, stud -> gpa);
+    }
+    else if (stud->gpa < 2.0) {
+        printf("%-20s : %-5d : \x1b[33m%-4.2f\x1b[0m\n", stud -> name, stud -> id, stud -> gpa);
+    }
+    else {
+        printf("%-20s : %-5d : %-4.2f\n", stud -> name, stud -> id, stud -> gpa);
+    }
+    
 }
 
 //////////////////////// CSV File Operations /////////////////////////////
@@ -304,7 +317,8 @@ CourseNode* copy_course_list(CourseNode* courses) {
 }
 
 void print_course_list(CourseNode* list) {
-
+    printf("%-10s: %-9s: %s\n", "Course", "Graph", "Percentage");
+    printf("-------------------------------------\n");
     CourseNode* runner = list;
     while (runner != NULL) {
         print_course(runner -> course);
@@ -422,7 +436,6 @@ void print_stud_list_brief(StudNode* list) {
     }
     while (list != NULL) {
         print_stud_brief(list -> stud);
-        printf("\n");
         list = list -> next;
     }
 
@@ -477,7 +490,6 @@ StudNode* sort_by_stud_id(StudNode* list) {
     
     int swapped = 0;
     StudNode* runner;
-    int result = 0;
     do {
         runner = list;//reset pointer for next iteration
         swapped = 0;//reset swapped check variable
@@ -498,7 +510,6 @@ StudNode* sort_by_stud_gpa(StudNode* list) {
     
     int swapped = 0;
     StudNode* runner;
-    int result = 0;
     do {
         runner = list;//reset pointer for next iteration
         swapped = 0;//reset swapped check variable
@@ -565,7 +576,7 @@ StudNode* init_stud_list(const char* file) {
     if (!stud_list) {
         return NULL;
     }
-    printf("Successfully read %d students from %s\n", student_count, file);
+    printf("\nSuccessfully read %d students from %s\n", student_count, file);
 
     return stud_list;
 
@@ -575,7 +586,6 @@ StudNode* find_stud(StudNode* list) {
 
     StudNode* sub_list = NULL;
     int choice = 0;
-    char name[50];
     int id = 0;
     int count = 0;
     while (1) {
@@ -589,7 +599,8 @@ StudNode* find_stud(StudNode* list) {
             return NULL;
         }
         switch (choice) {
-            case 1:
+            // You cannot declare variables in a case without {}, or gcc throws an error.
+            case 1: {
                 char prompt[] = "Enter name: ";
                 char* name = get_string_input(prompt, 1);
                 sub_list = find_stud_by_name(list, name);
@@ -599,6 +610,7 @@ StudNode* find_stud(StudNode* list) {
                 print_stud_list(sub_list);
                 press_enter_to_continue();
                 return sub_list;
+            }
             case 2:
                 while (getchar() != '\n' && getchar() != EOF) {}
                 printf("\nEnter ID: ");
@@ -870,7 +882,6 @@ CourseNode* add_course_record(CourseNode* course_list) {
 
     int before = 0;
     int after = 0;
-    CourseNode* runner;
     while (1) {
         
         char* input = get_string_input("What is the title of the course? ", 1);
@@ -909,7 +920,6 @@ CourseNode* delete_course_record(CourseNode* course_list) {
 
     int before = 0;
     int after = 0;
-    CourseNode* runner;
     while (1) {
             
         print_course_list(course_list);
