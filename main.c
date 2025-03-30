@@ -9,15 +9,15 @@ int main(int argc, char** argv) {
 
     const char* csv_filename;
     if (argc < 2) {
-        printf("No CSV file provided. Using default: %s\n", DEFAULT_CSV_FILE);
+        printf("\nNo CSV filename in arguments. Using default: %s", DEFAULT_CSV_FILE);
         csv_filename = DEFAULT_CSV_FILE;
     } else {
         csv_filename = argv[1];
     }
     StudNode* main_stud_list = init_stud_list(csv_filename);
     int choice = 0;
-    printf("Welcome to the Archaic Student Grade Management System!\n");
-    printf("Buckle up and hop into our time machine where you get to track student progress like its 1987!\n\n\n");
+    printf("\n\n\nWelcome to the Archaic Student Grade Management System!\n");
+    printf("Buckle up and hop into our time machine where you get to track student progress like its 1987!\n\n");
 
     while(1) {
 
@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
         printf("7. Delete a Student record\n");
         printf("8. Add or Delete course from Student record\n");
         printf("9. Exit\n");
-        printf("Enter your choice: ");
+        printf("\nEnter your choice: ");
 
         //Check for valid input before proceeding
         if (scanf("%d", &choice) != 1) {
@@ -54,14 +54,17 @@ int main(int argc, char** argv) {
                 printf("\nList is sorted by GPA!\n");
                 break;
             case 4:
-                printf("\n\tName : ID : GPA\n");
+                printf("\n\n%-20s : %-5s : %-4s\n", "Name", "ID", "GPA");
+                printf("-------------------------------------\n");
                 print_stud_list_brief(main_stud_list);
                 press_enter_to_continue();
                 break;
-            case 5:
+            // You cannot declare variables in a case without {}, or the compiler throws an error.
+            case 5: {
                 StudNode* sub_list = find_stud(main_stud_list);
                 clear_stud_list(sub_list);
                 break;
+            }
             case 6:
                 main_stud_list = add_new_stud(main_stud_list);
                 press_enter_to_continue();
