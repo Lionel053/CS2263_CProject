@@ -1,6 +1,6 @@
-#include<stdlib.h>
-#include<stdio.h>
-#include<string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include "Structures.h"
 
 #define DEFAULT_CSV_FILE "students.csv"
@@ -33,11 +33,11 @@ int main(int argc, char** argv) {
         printf("9. Exit\n");
         printf("\nEnter your choice: ");
 
-        //Check for valid input before proceeding
-        if (scanf("%d", &choice) != 1) {
-            printf("Something went wrong!\n");
-            clear_stud_list(main_stud_list);
-            return EXIT_FAILURE;
+        char input_buffer[10];
+        if (fgets(input_buffer, sizeof(input_buffer), stdin)) {
+            if (sscanf(input_buffer, "%d", &choice) != 1) {
+                choice = -1;
+            }
         }
 
         switch (choice) {
@@ -78,11 +78,11 @@ int main(int argc, char** argv) {
                 press_enter_to_continue();
                 break;
             case 9:
-                write_students_to_csv(DEFAULT_CSV_FILE, main_stud_list);
+                write_students_to_csv(csv_filename, main_stud_list);
                 clear_stud_list(main_stud_list);
                 return EXIT_SUCCESS;
             default:
-                printf("Nothing happened...try something else?\n");
+                printf("\nInvalid input. Please try again.\n");
         }
 
     }
