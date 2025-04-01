@@ -82,19 +82,18 @@ StudNode* find_stud_by_id(StudNode* list, int id);//Should only return a list co
 
 //High level routines for use cases
 StudNode* init_stud_list(const char* file);
-StudNode* find_stud(StudNode* list);
+void find_stud(StudNode* list);
 StudNode* add_new_stud(StudNode* list);
-char* get_string_input(char* input, int validate);
 int get_new_id(StudNode* list);
 CourseNode* get_course_input();
 StudNode* delete_stud(StudNode* list);
 StudNode* remove_stud_by_id(StudNode* list, int id);
-void press_enter_to_continue();
 int get_list_count(StudNode* list);
 int get_course_count(CourseNode* list);
 StudNode* modify_stud_record(StudNode* list);
 CourseNode* delete_course_record(CourseNode* course_list);
 CourseNode* add_course_record(CourseNode* course_list);
+CourseNode* remove_course_by_name(CourseNode* head, const char* course_name);
 
 
 #endif
