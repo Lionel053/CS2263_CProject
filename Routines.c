@@ -48,7 +48,7 @@ void free_course(Course* course) {
 void print_course(Course* course) {
 
     int grade = course -> grade;
-    char bar[11] = {0};//must be initialized or will trip up Valgrind
+    char bar[11];
     for (int i = 0; i < 10; i++)
         if (i < grade / 10)
             bar[i] = '#';
@@ -209,7 +209,7 @@ void print_stud_brief(Student* stud) {
     else {
         printf("%-20s : %-5d : %-4.2f\n", stud -> name, stud -> id, stud -> gpa);
     }
-
+    
 }
 
 //////////////////////// CSV File Operations /////////////////////////////
@@ -221,42 +221,78 @@ StudNode* read_students_from_csv(const char* filename, int* student_count) {
     }
     
     *student_count = 0;
-
-    StudNode* stud_list = NULL;//Must be set to NULL. This constructs an empty list.
-    
+    StudNode* stud_list = NULL;  // Empty list
     char line[256];
 
     while (fgets(line, sizeof(line), file)) {
+        // Remove the newline at the end, if any.
         line[strcspn(line, "\n")] = '\0';
+        if (line[0] == '\0') {  // Skip empty lines
+            continue;
+        }
+        
+        // Get the student name.
         char* token = strtok(line, ",");
-        char* name = strdup(token);//strdup allocates memory, must be freed
+        if (token == NULL) {
+            continue;  // Skip if line malformed
+        }
+        char* name = strdup(token);
+        if (name == NULL) {
+            printf("Memory allocation failed for name.\n");
+            continue;
+        }
+        
+        // Get the student ID.
         token = strtok(NULL, ",");
+        if (token == NULL) {
+            free(name);
+            continue;
+        }
         int id = atoi(token);
 
-        CourseNode* course_list = NULL;//Must be set to NULL. This constructs an empty list
-        Course* course;
+        // Process the courses.
+        CourseNode* course_list = NULL;  // Start with an empty course list.
         while (1) {
             token = strtok(NULL, ",");
             if (token == NULL) {
+                break;  // No more tokens.
+            }
+            // Token is the course title.
+            char* course_title = strdup(token);
+            if (course_title == NULL) {
+                printf("Memory allocation failed for course title.\n");
                 break;
             }
-            char* course_title = strdup(token);//allocate memory must be freed everytime
+            
+            // Get the course grade.
             token = strtok(NULL, ",");
+            if (token == NULL) {  
+                free(course_title);
+                break;  // Malformed line, stop processing courses.
+            }
             int grade = atoi(token);
-            course = construct_course(course_title, grade);
+            Course* course = construct_course(course_title, grade);
+            if (course == NULL) {
+                printf("Failed to construct course for %s\n", course_title);
+                free(course_title);
+                continue;
+            }
             course_list = insert_course(course_list, course);
-            free(course_title);//free course_title
+            free(course_title);
         }
+        
         int numGrades = get_course_count(course_list);
         float gpa = get_GPA(course_list);
         Student* stud = construct_stud(name, course_list, id, gpa, numGrades);
         stud_list = insert_stud(stud_list, stud);
-        free(name);//freed name
+        free(name);
         (*student_count)++;
     }
+    
     fclose(file);
     return stud_list;
 }
+
 
 void write_students_to_csv(const char* filename, StudNode* list) {
     FILE* file = fopen(filename, "w");
@@ -264,19 +300,22 @@ void write_students_to_csv(const char* filename, StudNode* list) {
         printf("Failed to open file for writing: %s\n", filename);
         return;
     }
-    CourseNode* courses;
     while (list != NULL) {
-        fprintf(file, "%s,%d,", list -> stud -> name, list -> stud -> id);
-        courses = list -> stud -> courses;
+        // Print the student's name and id.
+        fprintf(file, "%s,%d", list->stud->name, list->stud->id);
+        CourseNode* courses = list->stud->courses;
+        // For each course, prepend a comma then print the course title and grade.
         while (courses != NULL) {
-            fprintf(file, "%s,%d,", courses -> course -> title, courses -> course -> grade);
-            courses = courses -> next;
+            fprintf(file, ",%s,%d", courses->course->title, courses->course->grade);
+            courses = courses->next;
         }
+        // End the line for the student.
         fprintf(file, "\n");
-        list = list -> next;
+        list = list->next;
     }
     fclose(file);
 }
+
 
 ///////////////////////////////Course Node Linked List Operations///////////////////////////
 static CourseNode* construct_course_node(Course* course) {
@@ -317,7 +356,6 @@ CourseNode* copy_course_list(CourseNode* courses) {
 }
 
 void print_course_list(CourseNode* list) {
-
     printf("%-10s: %-9s: %s\n", "Course", "Graph", "Percentage");
     printf("-------------------------------------\n");
     CourseNode* runner = list;
@@ -422,11 +460,11 @@ void print_stud_list(StudNode* list) {
         printf("\nEmpty list!\n");
         return;
     }
-    while (list != NULL) {
-        print_stud(list -> stud);
-        list = list -> next;
+    StudNode* runner = list;
+    while (runner != NULL) {
+        print_stud(runner -> stud);
+        runner = runner -> next;
     }
-    
 }
 
 void print_stud_list_brief(StudNode* list) {
@@ -436,7 +474,6 @@ void print_stud_list_brief(StudNode* list) {
     }
     while (list != NULL) {
         print_stud_brief(list -> stud);
-        printf("\n");
         list = list -> next;
     }
 
@@ -457,70 +494,43 @@ void clear_stud_list(StudNode* list) {
 
 /////////////////////////Sorting routines//////////////////////////////
 
-void swap(StudNode* curr, StudNode* curr_plus_one) {
-    
-    Student* temp = curr -> stud;
-    curr -> stud = curr_plus_one -> stud;
-    curr_plus_one -> stud = temp;
-    
+int compare_by_name(Student* a, Student* b) {
+    return strcmp(a->name, b->name);
 }
 
-StudNode* merge_by_name(StudNode* left, StudNode* right) {
-    if (!left) {
-        return right;
-    }
-    if (!right) {
-        return left;
-    }
+int compare_by_id(Student* a, Student* b) {
+    return a->id - b->id;
+}
 
-    int comp = strcmp(left -> stud -> name, right -> stud -> name);
-    if (comp <= 0) {
-        left -> next = merge_by_name(left -> next, right);
-        left -> next -> prev = left;
-        left -> prev = NULL;
-        return left;
-    } else {
-        right -> next = merge_by_name(left, right -> next);
-        right -> next -> prev = right;
-        right -> prev = NULL;
-        return right;
+int compare_by_gpa(Student* a, Student* b) {
+    if (a->gpa == b->gpa) {
+        return 0;
     }
+    return (a->gpa > b->gpa) ? -1 : 1;
 }
 
 StudNode* split(StudNode* head) {
-    if (!head || !head -> next) {
+    if (!head || !head->next) {
         return NULL;
     }
 
     StudNode* slow = head;
-    StudNode* fast = head -> next;
+    StudNode* fast = head->next;
 
-    while (fast && fast -> next) {
-        slow = slow -> next;
-        fast = fast -> next -> next;
+    while (fast && fast->next) {
+        slow = slow->next;
+        fast = fast->next->next;
     }
 
-    StudNode* second_half = slow -> next;
-    slow -> next = NULL;
+    StudNode* second_half = slow->next;
+    slow->next = NULL;
+    if (second_half) {
+        second_half->prev = NULL;
+    }
     return second_half;
 }
 
-StudNode* sort_by_stud_name(StudNode* list) {
-
-    if (!list || !list -> next) {
-        return list;
-    }
-
-    StudNode* second_half = split(list);
-
-    list = sort_by_stud_name(list);
-    second_half = sort_by_stud_name(second_half);
-
-    return merge_by_name(list, second_half);
-
-}
-
-StudNode* merge_by_id(StudNode* left, StudNode* right) {
+StudNode* merge(StudNode* left, StudNode* right, Comparator cmp) {
     if (!left) {
         return right;
     }
@@ -528,68 +538,32 @@ StudNode* merge_by_id(StudNode* left, StudNode* right) {
         return left;
     }
 
-    if (left -> stud -> id <= right -> stud -> id) {
-        left -> next = merge_by_id(left -> next, right);
-        left -> next -> prev = left;
-        left -> prev = NULL;
+    if (cmp(left->stud, right->stud) <= 0) {
+        left->next = merge(left->next, right, cmp);
+        if (left->next) {
+            left->next->prev = left;
+        }
+        left->prev = NULL;
         return left;
     } else {
-        right -> next = merge_by_id(left, right -> next);
-        right -> next -> prev = right;
-        right -> prev = NULL;
+        right->next = merge(left, right->next, cmp);
+        if (right->next) {
+            right->next->prev = right;
+        }
+        right->prev = NULL;
         return right;
     }
 }
 
-StudNode* sort_by_stud_id(StudNode* list) {
-    
-    if (!list || !list -> next) {
+StudNode* stud_merge_sort(StudNode* list, Comparator cmp) {
+    if (!list || !list->next) {
         return list;
     }
 
     StudNode* second_half = split(list);
-
-    list = sort_by_stud_id(list);
-    second_half = sort_by_stud_id(second_half);
-
-    return merge_by_id(list, second_half);
-
-}
-
-StudNode* merge_by_gpa(StudNode* left, StudNode* right) {
-    if (!left) {
-        return right;
-    }
-    if (!right) {
-        return left;
-    }
-
-    if (left -> stud -> gpa >= right -> stud -> gpa) {
-        left -> next = merge_by_gpa(left -> next, right);
-        left -> next -> prev = left;
-        left -> prev = NULL;
-        return left;
-    } else {
-        right -> next = merge_by_gpa(left, right -> next);
-        right -> next -> prev = right;
-        right -> prev = NULL;
-        return right;
-    }
-}
-
-StudNode* sort_by_stud_gpa(StudNode* list) {
-    
-    if (!list || !list -> next) {
-        return list;
-    }
-
-    StudNode* second_half = split(list);
-
-    list = sort_by_stud_gpa(list);
-    second_half = sort_by_stud_gpa(second_half);
-
-    return merge_by_gpa(list, second_half);
-
+    list = stud_merge_sort(list, cmp);
+    second_half = stud_merge_sort(second_half, cmp);
+    return merge(list, second_half, cmp);
 }
 
 ////////////////////////Sublisting routines for searching (provides a deep copy, must be freed independently)/////////////
@@ -642,55 +616,57 @@ StudNode* init_stud_list(const char* file) {
     if (!stud_list) {
         return NULL;
     }
-    printf("Successfully read %d students from %s\n", student_count, file);
+    printf("\nSuccessfully read %d students from %s\n", student_count, file);
 
     return stud_list;
 
 }
 
-StudNode* find_stud(StudNode* list) {
-
-    StudNode* sub_list = NULL;
-    int choice = 0;
-    char name[50];
-    int id = 0;
-    int count = 0;
+void find_stud(StudNode* list) {
     while (1) {
-        printf("\nFind student by\n");
+        printf("\nFind student by:\n");
         printf("1. Name\n");
         printf("2. ID\n");
-        printf("Enter the corresponding number to your choice: ");
+        printf("\nEnter your choice: ");
+        
+        StudNode* sub_list = NULL;
+        int count = 0;
+        int choice = 0;
         if (scanf("%d", &choice) != 1) {
-            printf("\nSomething went wrong!\n");
-            while (getchar() != '\n' && getchar() != EOF) {}
-            return NULL;
+            int c;
+            while ((c = getchar()) != '\n' && c != EOF);
+            continue;
         }
+        
         switch (choice) {
-            case 1:
-                char prompt[] = "Enter name: ";
-                char* name = get_string_input(prompt, 1);
+            case 1: {
+                char name[100];
+                printf("\nEnter name: ");
+                scanf(" %[^\n]", name);
+                while (getchar() != '\n' && getchar() != EOF);
                 sub_list = find_stud_by_name(list, name);
-                free(name);
                 count = get_list_count(sub_list);
                 printf("\n\n%d matches found\n\n", count);
                 print_stud_list(sub_list);
-                press_enter_to_continue();
-                return sub_list;
-            case 2:
-                while (getchar() != '\n' && getchar() != EOF) {}
+                return;
+            }
+            
+            case 2: {
+                int id;
                 printf("\nEnter ID: ");
                 scanf("%d", &id);
+                while (getchar() != '\n' && getchar() != EOF);
                 sub_list = find_stud_by_id(list, id);
                 count = get_list_count(sub_list);
                 printf("\n\n%d matches found\n\n", count);
                 print_stud_list(sub_list);
-                press_enter_to_continue();
-                return sub_list;
+                return;
+            }
+            
             default:
-                printf("Nothing happened...try something else?\n");
+                printf("Invalid input. Please try again.\n");
         }
     }
-
 }
 
 int get_list_count(StudNode* list) {
@@ -715,105 +691,95 @@ int get_course_count(CourseNode* list) {
 
 }
 
-//Must free returned value when done
-char* get_string_input(char* prompt, int validate) {
-
-    char* input = (char*) malloc(sizeof(char) * 50);
-    char choice;
-    while (1) {
-        while (getchar() != '\n' && getchar() != EOF) {}
-        printf("%s", prompt);
-        if (fgets(input, 50, stdin)) {
-            input[strcspn(input, "\n")] = '\0';
-        } else {
-            free(input);
-            continue;
-        }
-        if (!validate) {
-            return input;
-        }
-        printf("\nYou entered: %s\nIs this correct? y or n\n", input);
-        if (scanf("%c", &choice) != 1) {
-            printf("Something went wrong!\n");
-            return NULL;
-        }
-        switch(choice) {
-            case 'y':
-                return input;
-            case 'n':
-                continue;
-            default:
-                printf("I didn't get that, try again\n");
-        }
-    }
-
-}
 
 int get_new_id(StudNode* list) {
-
-    int possible_new_id = 0;
-    while (list -> next != NULL) {
-        if (list -> stud -> id > possible_new_id) {
-            possible_new_id = list -> stud -> id;
+    int max_id = 101;
+    for (StudNode* curr = list; curr != NULL; curr = curr->next) {
+        if (curr->stud->id > max_id) {
+            max_id = curr->stud->id;
         }
-        list = list -> next;
     }
-    return possible_new_id + 1;
-
+    return max_id + 1;
 }
 
 CourseNode* get_course_input() {
-
     CourseNode* list = NULL;
-    Course* course;
     int grade = 0;
     char choice;
-    while (getchar() != '\n' && getchar() != EOF) {}
-    printf("\nDo you want to add courses? ");
-    scanf("%c", &choice);
-    if (!choice) {
-        return NULL;
-    }
     while (1) {
-        char prompt[] = "\nWhat is the course title? ";
-        char* title = get_string_input(prompt, 1);
-        while (getchar() != '\n' && getchar() != EOF) {}
-        printf("\nWhat grade did they get? ");
-        scanf("%d", &grade);
-        course = construct_course(title, grade);
-        free(title);
-        list = insert_course(list, course);
-        printf("Add another course? y or n\n");
-        while (getchar() != '\n' && getchar() != EOF) {}
-        if (scanf("%c", &choice) != 1) {
-            printf("Something went wrong!\n");
-            return NULL;
+        printf("Enter the course title: ");
+        char temp[100];
+        if (fgets(temp, sizeof(temp), stdin)) {
+            temp[strcspn(temp, "\n")] = '\0';
+        } else {
+            printf("Error reading course title.\n");
+            continue;
         }
-        switch(choice) {
-            case 'n':
-                return list;
-            case 'y':
-                continue;
-            default:
-                printf("I didn't get that, try again\n");
+        
+        char* title = malloc(strlen(temp) + 1);
+        if (title == NULL) {
+            printf("Memory allocation failed for course title.\n");
+            continue;
         }
-    }
+        strcpy(title, temp);
+        
+        printf("Enter the grade (in percent): ");
+        if (scanf("%d", &grade) != 1) {
+            printf("Invalid grade input.\n");
+            free(title);
+            int c;
+            while ((c = getchar()) != '\n' && c != EOF);
+            continue;
+        }
 
+        int c;
+        while ((c = getchar()) != '\n' && c != EOF);
+        Course* new_course = construct_course(title, grade);
+        free(title);
+        if (new_course == NULL) {
+            printf("Failed to construct course record.\n");
+            continue;
+        }
+        list = insert_course(list, new_course);
+        
+        printf("Add another course? (y)es or (n)o: ");
+        if (scanf("%c", &choice) != 1) {
+            printf("Input error!\n");
+            break;
+        }
+
+        while ((c = getchar()) != '\n' && c != EOF);
+        if (choice == 'n')
+            break;
+    }
+    return list;
 }
 
+
+
 StudNode* add_new_stud(StudNode* list) {
+    char buffer[100];
+    printf("\nEnter the student's name: ");
+    if (fgets(buffer, sizeof(buffer), stdin)) {
+        buffer[strcspn(buffer, "\n")] = '\0';  // Remove trailing newline
+    }
+    char* name = (char*)malloc(strlen(buffer) + 1);
+    if (name == NULL) {
+        printf("Memory allocation failed for name.\n");
+        return list;
+    }
+    strcpy(name, buffer);
     
-    char* name = get_string_input("Please enter the student's full name: ", 1);
     int id = get_new_id(list);
-    CourseNode* courses = get_course_input();
+    CourseNode* courses = get_course_input(); // Make sure to trim newline in get_course_input as well
     int numGrades;
     float gpa;
     if (courses != NULL) {
-        CourseNode* runner = courses;
         int count = 0;
+        CourseNode* runner = courses;
         while (runner != NULL) {
             count++;
-            runner = runner -> next;
+            runner = runner->next;
         }
         numGrades = count;
         float* grade_points = getGradePoints(courses, numGrades);
@@ -829,11 +795,9 @@ StudNode* add_new_stud(StudNode* list) {
     list = insert_stud(list, new_stud);
     printf("Student successfully added to system!\n");
     return list;
-
 }
 
 StudNode* remove_stud_by_id(StudNode* list, int id) {
-
     if (list == NULL) {
         return NULL;
     }
@@ -870,29 +834,32 @@ StudNode* remove_stud_by_id(StudNode* list, int id) {
 }
 
 StudNode* delete_stud(StudNode* list) {
-
     int input = 0;
-    printf("You must have the student id number. Enter the student id number now: ");
+    printf("Enter the Student ID number now: ");
     if (scanf("%d", &input) != 1) {
         printf("\n\nSomething went wrong here\n\n");
+        while (getchar() != '\n');
         return list;
     }
+    while (getchar() != '\n');
+
     StudNode* copy = find_stud_by_id(list, input);
     if (copy == NULL) {
         printf("\nStudent not found!\n");
         return list;
     }
     print_stud_list(copy);
-    char prompt[] = "Are you sure you want to delete this student? ";
-    char* response = get_string_input(prompt, 0);
-    printf("%s\n", response);
-    if (strcmp(response, "y") != 0 && strcmp(response, "yes") != 0) {
+    
+    printf("Are you sure you want to delete this student? Enter (y) to confirm: ");
+    char c;
+    if (scanf(" %c", &c) != 1 || c != 'y') {
         printf("\nOperation cancelled!\n");
-        free(response);
-        free_stud(copy -> stud);
+        while (getchar() != '\n'); // **Clear buffer after char input**
+        free_stud(copy->stud);
         free(copy);
         return list;
     }
+
     int before = get_list_count(list);
     list = remove_stud_by_id(list, input);
     int after = get_list_count(list);
@@ -901,68 +868,90 @@ StudNode* delete_stud(StudNode* list) {
     } else {
         printf("\nStudent not found, try again!\n");
     }
-    free(response);
-    free_stud(copy -> stud);
+    free_stud(copy->stud);
     free(copy);
+    
+    while (getchar() != '\n'); // **Ensure buffer is clear before returning**
     return list;
-
 }
 
 StudNode* modify_stud_record(StudNode* list) {
-
-    //TODO
     int input = 0;
-    printf("You must have the student id number. Enter the student id number now: ");
+    printf("Enter the student ID: ");
     if (scanf("%d", &input) != 1) {
-        printf("\n\nSomething went wrong here\n\n");
+        printf("\n\nInvalid input.\n\n");
+        // Clear input buffer
+        int ch;
+        while ((ch = getchar()) != '\n' && ch != EOF);
         return list;
     }
+    // Clear input buffer after reading integer.
+    int ch;
+    while ((ch = getchar()) != '\n' && ch != EOF);
+
     StudNode* runner = list;
     while (runner != NULL) {
-        if (runner -> stud -> id == input) {
+        if (runner->stud->id == input) {
             break;
         }
-        runner = runner -> next;
+        runner = runner->next;
     }
     if (runner == NULL) {
         printf("\n\nStudent not found. Try again\n");
         return list;
     }
-    CourseNode* stud_courses = runner -> stud -> courses;
-    char prompt[] = "\nDo you want to add or remove courses? ";
-    char* dec_input = get_string_input(prompt, 0);
-    if (strcmp(dec_input, "a") == 0 || strcmp(dec_input, "add") == 0) {
+    CourseNode* stud_courses = runner->stud->courses;
+    printf("\nDo you want to (a)dd or (r)emove courses? ");
+    
+    // Use scanf with " %c" to skip any whitespace:
+    char c;
+    if (scanf(" %c", &c) != 1) {
+        printf("\nInvalid input.\n");
+        // Clear buffer
+        while ((ch = getchar()) != '\n' && ch != EOF);
+        return list;
+    }
+    // Clear buffer after reading the character.
+    while ((ch = getchar()) != '\n' && ch != EOF);
+    
+    if (c == 'a') {
         stud_courses = add_course_record(stud_courses);
-    } else if (strcmp(dec_input, "r") == 0 || strcmp(dec_input, "remove") == 0) {
+    } else if (c == 'r') {
         stud_courses = delete_course_record(stud_courses);
     } else {
-        printf("\nInvalid input, try again\n");
+        printf("\nInvalid input.\n");
     }
     float new_gpa = get_GPA(stud_courses);
-    runner -> stud -> gpa = new_gpa;
-    runner -> stud -> courses = stud_courses;//Update the head of the list to include the new additions
-    free(dec_input);
+    runner->stud->gpa = new_gpa;
+    runner->stud->courses = stud_courses; // Update the head of the list to include the new additions
     return list;
-
 }
 
 CourseNode* add_course_record(CourseNode* course_list) {
-
     int before = 0;
     int after = 0;
-    CourseNode* runner;
     while (1) {
-        
-        char* input = get_string_input("What is the title of the course? ", 1);
         int grade = 0;
-        printf("\nWhat grade do they have? ");
+        printf("Enter the name of the course: ");
+
+        char buffer[100]; 
+        fgets(buffer, sizeof(buffer), stdin);
+        buffer[strcspn(buffer, "\n")] = '\0';
+
+        char* name = (char*)malloc(strlen(buffer) + 1);
+        if (!name) {
+            printf("Memory allocation failed!\n");
+            return course_list;
+        }
+        strcpy(name, buffer); 
+
+        printf("\nEnter the grade (in percent): ");
         if (scanf("%d", &grade) != 1) {
             printf("\n\nSomething went wrong here\n\n");
-            free(input);
-            continue;
+            free(name);  // Free allocated memory on error
         } else {
             before = get_course_count(course_list);
-            Course* new_course = construct_course(input, grade);
+            Course* new_course = construct_course(name, grade);
             course_list = insert_course(course_list, new_course);
             after = get_course_count(course_list);
             if (before < after) {
@@ -971,54 +960,35 @@ CourseNode* add_course_record(CourseNode* course_list) {
                 printf("\nCourse record not found\n");
             }
         }
-        free(input);
 
-        char* re_continue = get_string_input("Continue adding course information? y or n: ", 0);
-        if (strcmp(re_continue, "y") == 0 || strcmp(re_continue, "yes") == 0) {
-            free(re_continue);
-            continue;
-        } else {
-            free(re_continue);
+        while (getchar() != '\n');
+
+        printf("Continue adding course information? (y)es or (n)o: ");
+        char c = getchar();
+        while (getchar() != '\n');
+
+        if (c != 'y') {
             return course_list;
         }
     }
-
 }
+
 
 CourseNode* delete_course_record(CourseNode* course_list) {
-
     int before = 0;
     int after = 0;
-    CourseNode* runner;
-    while (1) {
-            
-        print_course_list(course_list);
-        before = get_course_count(course_list);
-        char* input = get_string_input("What is the title of the course you want to delete? ", 1);
-        course_list = delete_course(course_list, input);
-        after = get_course_count(course_list);
-        if (before > after) {
-            printf("\nSuccessfully deleted course record.\n");
-        } else {
-            printf("\nCourse record not found\n");
-        }
-        free(input);
-
-        char* re_continue = get_string_input("Continue deleting course information? y or n: ", 0);
-        if (strcmp(re_continue, "y") != 0 && strcmp(re_continue, "yes") != 0) {
-            free(re_continue);
-            return course_list;
-        }
-        free(re_continue);
+    print_course_list(course_list);
+    before = get_course_count(course_list);
+    printf("Name of course to delete: ");
+    char course[100];
+    fgets(course, sizeof(course), stdin);
+    course[strcspn(course, "\n")] = '\0';
+    course_list = delete_course(course_list, course);
+    after = get_course_count(course_list);
+    if (before > after) {
+        printf("\nSuccessfully deleted course record.\n");
+    } else {
+        printf("\nCourse record not found\n");
     }
     return course_list;
-
-}
-
-void press_enter_to_continue() {
-
-    while (getchar() != '\n' && getchar() != EOF) {}
-    printf("\n\nPress the Enter button to continue...");
-    getchar();
-
 }
