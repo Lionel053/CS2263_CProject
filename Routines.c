@@ -54,6 +54,7 @@ void print_course(Course* course) {
             bar[i] = '#';
         else
             bar[i] = ' ';
+    bar[10] = '\0';
     printf("%-10s| %s (%d)\n", course->title, bar, grade);
 
 }
@@ -648,6 +649,7 @@ void find_stud(StudNode* list) {
                 count = get_list_count(sub_list);
                 printf("\n\n%d matches found\n\n", count);
                 print_stud_list(sub_list);
+                clear_stud_list(sub_list);
                 return;
             }
             
@@ -660,12 +662,14 @@ void find_stud(StudNode* list) {
                 count = get_list_count(sub_list);
                 printf("\n\n%d matches found\n\n", count);
                 print_stud_list(sub_list);
+                clear_stud_list(sub_list);
                 return;
             }
             
             default:
                 printf("Invalid input. Please try again.\n");
         }
+      clear_stud_list(sub_list);
     }
 }
 
@@ -693,7 +697,7 @@ int get_course_count(CourseNode* list) {
 
 
 int get_new_id(StudNode* list) {
-    int max_id = 101;
+    int max_id = 100;
     for (StudNode* curr = list; curr != NULL; curr = curr->next) {
         if (curr->stud->id > max_id) {
             max_id = curr->stud->id;
@@ -948,17 +952,29 @@ CourseNode* add_course_record(CourseNode* course_list) {
         printf("\nEnter the grade (in percent): ");
         if (scanf("%d", &grade) != 1) {
             printf("\n\nSomething went wrong here\n\n");
-            free(name);  // Free allocated memory on error
+            free(name);
+            while (getchar() != '\n');
+            continue;
+        }
+
+        before = get_course_count(course_list);
+        Course* new_course = construct_course(name, grade);
+        if (!new_course) {  
+            free(name);
+            printf("\nFailed to create course.\n");
+            continue;
+        }
+        
+        free(name);
+
+        course_list = insert_course(course_list, new_course);
+        after = get_course_count(course_list);
+        if (before >= after) {
+            printf("\nCourse record not found\n");
+            free(new_course->title);
+            free(new_course);
         } else {
-            before = get_course_count(course_list);
-            Course* new_course = construct_course(name, grade);
-            course_list = insert_course(course_list, new_course);
-            after = get_course_count(course_list);
-            if (before < after) {
-                printf("\nCourse record successfully added.\n");
-            } else {
-                printf("\nCourse record not found\n");
-            }
+            printf("\nCourse record successfully added.\n");
         }
 
         while (getchar() != '\n');
@@ -972,7 +988,6 @@ CourseNode* add_course_record(CourseNode* course_list) {
         }
     }
 }
-
 
 CourseNode* delete_course_record(CourseNode* course_list) {
     int before = 0;
